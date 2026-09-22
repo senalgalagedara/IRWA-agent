@@ -1,0 +1,100 @@
+"""FastAPI application factory."""
+
+from __future__ import annotations
+
+from fastapi import FastAPI
+from starlette.middleware.sessions import SessionMiddleware
+
+from app.api.admin import router as admin_router
+from app.api.analyses import router as analyses_router
+from app.api.audit import router as audit_router
+from app.api.capacity import router as capacity_router
+from app.api.dashboard import router as dashboard_router
+from app.api.documents import router as documents_router
+from app.api.errors import register_exception_handlers
+from app.api.health import router as health_router
+from app.api.ie import router as ie_router
+from app.api.imports import router as imports_router
+from app.api.internal import router as internal_router
+from app.api.inventory import router as inventory_router
+from app.api.me import router as me_router
+from app.api.middleware import SecurityHeadersMiddleware, TraceIdMiddleware
+from app.api.notes import router as notes_router
+from app.api.notifications import router as notifications_router
+from app.api.orders import router as orders_router
+from app.api.quality import router as quality_router
+from app.api.ratelimit import RateLimitMiddleware
+from app.api.recommendations import router as recommendations_router
+from app.api.reference import router as reference_router
+from app.api.runs import router as runs_router
+from app.api.search import router as search_router
+from app.api.summaries import router as summaries_router
+from app.auth.csrf import CsrfMiddleware
+from app.auth.oidc import build_oauth
+from app.auth.routes import router as auth_router
+from app.logging import configure_logging
+from app.settings import Settings, get_settings
+
+OIDC_HANDSHAKE_COOKIE = "ls_oidc"
+OIDC_HANDSHAKE_MAX_AGE_SECONDS = 600
+
+
+def create_app(settings: Settings | None = None) -> FastAPI:
+    resolved_settings = settings if settings is not None else get_settings()
+    configure_logging(resolved_settings)
+
+    app = FastAPI(title="LineSense AI", version="0.1.0")
+    app.state.settings = resolved_settings
+    app.state.oauth = build_oauth(resolved_settings)
+
+    # Starlette runs the most recently added middleware first, so the
+    # effective order (outermost first) is: trace id -> security headers ->
+    # OIDC handshake cookie -> CSRF -> rate limiting -> routes. Rate limiting
+    # is added before CSRF (so it ends up innermost, right before the route)
+    # to reuse the session CSRF already resolved for unsafe `/api/...`
+    # requests (see RateLimitMiddleware's docstring).
+    app.add_middleware(RateLimitMiddleware, settings=resolved_settings)
+    app.add_middleware(CsrfMiddleware, settings=resolved_settings)
+    # The signed session cookie is used only for the OIDC handshake (state,
+    # nonce, PKCE verifier, post-login path); application sessions are the
+    # opaque server-side `ls_session` records.
+    app.add_middleware(
+        SessionMiddleware,
+        secret_key=resolved_settings.session_secret.get_secret_value(),
+        session_cookie=OIDC_HANDSHAKE_COOKIE,
+        max_age=OIDC_HANDSHAKE_MAX_AGE_SECONDS,
+        path="/auth",
+        same_site="lax",
+        https_only=resolved_settings.environment == "production",
+    )
+    app.add_middleware(
+        SecurityHeadersMiddleware, https_only=resolved_settings.environment == "production"
+    )
+    app.add_middleware(TraceIdMiddleware)
+
+    register_exception_handlers(app)
+
+    app.include_router(health_router)
+    app.include_router(auth_router)
+    app.include_router(me_router)
+    app.include_router(orders_router)
+    app.include_router(imports_router)
+    app.include_router(documents_router)
+    app.include_router(search_router)
+    app.include_router(audit_router)
+    app.include_router(notifications_router)
+    app.include_router(reference_router)
+    app.include_router(inventory_router)
+    app.include_router(capacity_router)
+    app.include_router(ie_router)
+    app.include_router(quality_router)
+    app.include_router(analyses_router)
+    app.include_router(runs_router)
+    app.include_router(recommendations_router)
+    app.include_router(notes_router)
+    app.include_router(summaries_router)
+    app.include_router(dashboard_router)
+    app.include_router(admin_router)
+    app.include_router(internal_router)
+
+    return app
