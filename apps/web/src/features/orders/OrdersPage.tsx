@@ -1,5 +1,5 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 
 import { DataTable, type Column } from '../../components/DataTable'
@@ -59,58 +59,80 @@ function ShipmentCell({ shipment }: { shipment: OrderSummary['shipment'] }) {
   )
 }
 
-const COLUMNS: Column<OrderSummary>[] = [
-  {
-    key: 'external_ref',
-    header: 'Order',
-    render: (order) => <span className="font-mono text-xs font-medium">{order.external_ref}</span>,
-  },
-  {
-    key: 'customer',
-    header: 'Customer',
-    render: (order) => (
-      <div>
-        <div>{order.customer.name}</div>
-        <div className="font-mono text-xs text-fg-muted">{order.customer.code}</div>
-      </div>
-    ),
-  },
-  {
-    key: 'style',
-    header: 'Style',
-    render: (order) => (
-      <div>
-        <div>{order.style.name}</div>
-        <div className="font-mono text-xs text-fg-muted">{order.style.code}</div>
-      </div>
-    ),
-  },
-  { key: 'quantity', header: 'Quantity', align: 'right', render: (order) => formatInteger(order.quantity) },
-  {
-    key: 'progress',
-    header: 'Produced / packed',
-    align: 'right',
-    render: (order) => `${formatInteger(order.produced_units)} / ${formatInteger(order.packed_units)}`,
-  },
-  { key: 'due_date', header: 'Due date', render: (order) => <span className="whitespace-nowrap">{formatDate(order.due_date)}</span> },
-  { key: 'priority', header: 'Priority', align: 'right', render: (order) => formatInteger(order.priority) },
-  {
-    key: 'production_state',
-    header: 'Production',
-    render: (order) => <StateBadge vocabulary="production" state={order.production_state} />,
-  },
-  {
-    key: 'material_state',
-    header: 'Materials',
-    render: (order) => <StateBadge vocabulary="material" state={order.material_state} />,
-  },
-  {
-    key: 'quality_state',
-    header: 'Quality',
-    render: (order) => <StateBadge vocabulary="quality" state={order.quality_state} />,
-  },
-  { key: 'shipment', header: 'Shipment', render: (order) => <ShipmentCell shipment={order.shipment} /> },
-]
+function getColumns(factoryCode: string): Column<OrderSummary>[] {
+  return [
+    {
+      key: 'external_ref',
+      header: 'Order',
+      render: (order) => (
+        <Link
+          className="link font-mono text-xs font-semibold hover:underline"
+          to={`/f/${encodeURIComponent(factoryCode)}/orders/${order.id}`}
+        >
+          {order.external_ref}
+        </Link>
+      ),
+    },
+    {
+      key: 'customer',
+      header: 'Customer',
+      render: (order) => (
+        <div>
+          <div>{order.customer.name}</div>
+          <div className="font-mono text-xs text-fg-muted">{order.customer.code}</div>
+        </div>
+      ),
+    },
+    {
+      key: 'style',
+      header: 'Style',
+      render: (order) => (
+        <div>
+          <div>{order.style.name}</div>
+          <div className="font-mono text-xs text-fg-muted">{order.style.code}</div>
+        </div>
+      ),
+    },
+    { key: 'quantity', header: 'Quantity', align: 'right', render: (order) => formatInteger(order.quantity) },
+    {
+      key: 'progress',
+      header: 'Produced / packed',
+      align: 'right',
+      render: (order) => `${formatInteger(order.produced_units)} / ${formatInteger(order.packed_units)}`,
+    },
+    { key: 'due_date', header: 'Due date', render: (order) => <span className="whitespace-nowrap">{formatDate(order.due_date)}</span> },
+    { key: 'priority', header: 'Priority', align: 'right', render: (order) => formatInteger(order.priority) },
+    {
+      key: 'production_state',
+      header: 'Production',
+      render: (order) => <StateBadge vocabulary="production" state={order.production_state} />,
+    },
+    {
+      key: 'material_state',
+      header: 'Materials',
+      render: (order) => <StateBadge vocabulary="material" state={order.material_state} />,
+    },
+    {
+      key: 'quality_state',
+      header: 'Quality',
+      render: (order) => <StateBadge vocabulary="quality" state={order.quality_state} />,
+    },
+    { key: 'shipment', header: 'Shipment', render: (order) => <ShipmentCell shipment={order.shipment} /> },
+    {
+      key: 'actions',
+      header: '',
+      render: (order) => (
+        <Link
+          className="btn-secondary h-7 px-2 text-xs"
+          to={`/f/${encodeURIComponent(factoryCode)}/orders/${order.id}`}
+        >
+          <Icon name="eye" />
+          View
+        </Link>
+      ),
+    },
+  ]
+}
 
 export function OrdersPage() {
   const factory = useFactory()
@@ -181,6 +203,7 @@ export function OrdersPage() {
 
   const filtersActive = FILTER_PARAMS.some((param) => searchParams.has(param))
   const factoryPath = `/f/${encodeURIComponent(factory.code)}`
+  const columns = useMemo(() => getColumns(factory.code), [factory.code])
 
   const actions = (
     <>
@@ -244,7 +267,7 @@ export function OrdersPage() {
       <>
         <DataTable
           caption="Orders"
-          columns={COLUMNS}
+          columns={columns}
           rows={query.data.items}
           rowKey={(order) => order.id}
           sort={{ key: 'due_date', direction: 'ascending' }}
