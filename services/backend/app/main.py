@@ -98,3 +98,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(internal_router)
 
     return app
+
+
+if __name__ == "__main__":
+    import sys
+    import uvicorn
+    from uvicorn.loops import asyncio as uasyncio
+
+    if sys.platform == "win32":
+        import asyncio
+
+        uasyncio.asyncio_loop_factory = lambda use_subprocess=False: asyncio.SelectorEventLoop
+
+    uvicorn.run("app.main:create_app", factory=True, host="127.0.0.1", port=8000)
