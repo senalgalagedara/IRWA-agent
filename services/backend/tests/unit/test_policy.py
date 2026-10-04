@@ -29,8 +29,8 @@ EXPECTED: dict[str, set[str]] = {
     "ie:read": ALL_ROLES,
     "quality:read": ALL_ROLES,
     "document:read": ALL_ROLES,
-    "order:create": {"planner", "supervisor"},
-    "order:import": {"planner", "supervisor"},
+    "order:create": {"supervisor"},
+    "order:import": {"supervisor"},
     "order:transition": {"planner", "supervisor"},
     "order:dispatch": {"supervisor"},
     "order:cancel": {"supervisor"},
@@ -106,8 +106,9 @@ def test_org_wide_role_applies_to_any_factory() -> None:
 
 def test_factory_role_does_not_apply_to_another_factory() -> None:
     principal = _principal({FACTORY_A: frozenset({"planner"})})
-    assert principal.has("order:create", FACTORY_A)
-    assert not principal.has("order:create", FACTORY_B)
+    assert principal.has("analysis:run", FACTORY_A)
+    assert not principal.has("analysis:run", FACTORY_B)
+    assert not principal.has("order:create", FACTORY_A)
     assert not principal.has("order:read", FACTORY_B)
     assert principal.roles_for(FACTORY_B) == frozenset()
     with pytest.raises(AppError):

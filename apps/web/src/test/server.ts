@@ -26,9 +26,22 @@ const PLANNER_PERMISSIONS = [
   ...READ_PERMISSIONS,
   'analysis:run',
   'note:create',
+  'order:transition',
+]
+
+export const SUPERVISOR_PERMISSIONS = [
+  ...READ_PERMISSIONS,
+  'analysis:run',
+  'note:create',
   'order:create',
   'order:import',
   'order:transition',
+  'order:dispatch',
+  'order:cancel',
+  'recommendation:decide',
+  'recommendation:apply',
+  'document:upload',
+  'audit:read',
 ]
 
 export function makeMe(roles: string[], permissions: string[]): Schemas['MeResponse'] {

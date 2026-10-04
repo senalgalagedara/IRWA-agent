@@ -50,19 +50,6 @@ export interface ReportEvidenceItem {
   section: string | null
 }
 
-export interface ReportPromptSafetyCheck {
-  category: string
-  status: string
-  control: string
-  verification: string
-}
-
-export interface ReportPromptSafety {
-  status: string
-  scope: string
-  checks: ReportPromptSafetyCheck[]
-}
-
 export interface OrderReportData {
   states: { production: string; material: string; quality: string; analysis: string }
   shipment: { eligible: boolean; reasons: string[]; source: string }
@@ -70,7 +57,6 @@ export interface OrderReportData {
   agentSummaries: ReportAgentSummary[]
   recommendation: ReportRecommendation | null
   evidence: ReportEvidenceItem[]
-  promptSafety: ReportPromptSafety | null
   degraded: boolean
   degradedReasons: string[]
   generatedAt: string
@@ -144,32 +130,6 @@ function parseEvidenceItem(value: unknown): ReportEvidenceItem | null {
   }
 }
 
-function parsePromptSafety(value: unknown): ReportPromptSafety | null {
-  if (!isRecord(value) || typeof value.status !== 'string' || typeof value.scope !== 'string') return null
-  const checks = Array.isArray(value.checks)
-    ? value.checks
-        .map((check): ReportPromptSafetyCheck | null => {
-          if (!isRecord(check)) return null
-          if (
-            typeof check.category !== 'string' ||
-            typeof check.status !== 'string' ||
-            typeof check.control !== 'string' ||
-            typeof check.verification !== 'string'
-          ) {
-            return null
-          }
-          return {
-            category: check.category,
-            status: check.status,
-            control: check.control,
-            verification: check.verification,
-          }
-        })
-        .filter((check): check is ReportPromptSafetyCheck => check !== null)
-    : []
-  return { status: value.status, scope: value.scope, checks }
-}
-
 /** Parses `OrderDetail.latest_report`; returns `null` for a missing or malformed report. */
 export function parseOrderReport(value: unknown): OrderReportData | null {
   if (!isRecord(value)) return null
@@ -209,7 +169,6 @@ export function parseOrderReport(value: unknown): OrderReportData | null {
     agentSummaries,
     recommendation: parseRecommendation(value.recommendation),
     evidence,
-    promptSafety: parsePromptSafety(value.prompt_safety),
     degraded: value.degraded === true,
     degradedReasons: asStringArray(value.degraded_reasons),
     generatedAt: typeof value.generated_at === 'string' ? value.generated_at : '',

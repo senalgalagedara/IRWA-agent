@@ -109,19 +109,6 @@ class ReportRecommendation(BaseModel):
     source_label: str
 
 
-class ReportPromptSafetyCheck(BaseModel):
-    category: str
-    status: str
-    control: str
-    verification: str
-
-
-class ReportPromptSafety(BaseModel):
-    status: str
-    scope: str
-    checks: list[ReportPromptSafetyCheck]
-
-
 class OrderReport(BaseModel):
     order: ReportOrder
     states: ReportStates
@@ -130,7 +117,6 @@ class OrderReport(BaseModel):
     agent_summaries: list[ReportAgentSummary]
     recommendation: ReportRecommendation | None
     evidence: list[dict[str, Any]]
-    prompt_safety: ReportPromptSafety
     degraded: bool
     degraded_reasons: list[str]
     generated_at: datetime
@@ -256,57 +242,6 @@ def _evidence(
     return items
 
 
-def _prompt_safety() -> ReportPromptSafety:
-    """Describe the controls protecting plan and allocation decisions.
-
-    This is a control assessment, not a claim that the current run was an
-    adversarial red-team exercise. The executable attack scenarios live in
-    ``tests/security/test_prompt_injection.py`` and the evaluation harness.
-    """
-    return ReportPromptSafety(
-        status="PROTECTED",
-        scope="Plan and allocation recommendation",
-        checks=[
-            ReportPromptSafetyCheck(
-                category="Prompt injection",
-                status="PROTECTED",
-                control="Retrieved documents and tool results are treated as untrusted data.",
-                verification="Adversarial document and tool-output tests",
-            ),
-            ReportPromptSafetyCheck(
-                category="Jailbreak attempts",
-                status="PROTECTED",
-                control="The model can call only the registered, read/compute-only tools.",
-                verification="Unknown-tool and tool-limit tests",
-            ),
-            ReportPromptSafetyCheck(
-                category="Prompt leakage",
-                status="PROTECTED",
-                control="Provider prompts and tool results are redacted before transmission.",
-                verification="Secret-disclosure and redaction tests",
-            ),
-            ReportPromptSafetyCheck(
-                category="Instruction override",
-                status="PROTECTED",
-                control="Actions and citations are accepted only from deterministic candidates.",
-                verification="Invalid-action and out-of-scope-citation tests",
-            ),
-            ReportPromptSafetyCheck(
-                category="Prompt manipulation",
-                status="PROTECTED",
-                control="Tool arguments are schema-validated and treated as inert text.",
-                verification="SQL-shaped input and validation tests",
-            ),
-            ReportPromptSafetyCheck(
-                category="Prompt robustness",
-                status="PROTECTED",
-                control="Invalid or refused model output degrades without changing business state.",
-                verification="Agent-loop degradation and no-write regression tests",
-            ),
-        ],
-    )
-
-
 def build_order_report(
     run: AnalysisRun,
     snapshot: SnapshotData,
@@ -350,7 +285,6 @@ def build_order_report(
             )
         ),
         evidence=_evidence(tasks, results_by_task),
-        prompt_safety=_prompt_safety(),
         degraded=bool(reasons),
         degraded_reasons=reasons,
         generated_at=utcnow(),

@@ -30,8 +30,8 @@ def _roles(*roles: Role) -> frozenset[str]:
 
 _PERMISSION_TABLE: dict[str, frozenset[str]] = {
     **{permission: _ALL_ROLES for permission in _READ_PERMISSIONS},
-    "order:create": _roles(Role.PLANNER, Role.SUPERVISOR),
-    "order:import": _roles(Role.PLANNER, Role.SUPERVISOR),
+    "order:create": _roles(Role.SUPERVISOR),
+    "order:import": _roles(Role.SUPERVISOR),
     "order:transition": _roles(Role.PLANNER, Role.SUPERVISOR),
     "order:dispatch": _roles(Role.SUPERVISOR),
     "order:cancel": _roles(Role.SUPERVISOR),

@@ -193,10 +193,95 @@ function UserMenu() {
   )
 }
 
+/** Sections visible per role for role-specific sidebar navigation.
+ * Supervisors and Org Admins monitor all sections. */
+const ROLE_ALLOWED_SECTIONS: Record<string, string[]> = {
+  supervisor: [
+    'Overview',
+    'Orders',
+    'Planning',
+    'Approvals',
+    'Materials',
+    'Industrial engineering',
+    'Quality',
+    'Notes',
+    'Knowledge base',
+  ],
+  org_admin: [
+    'Overview',
+    'Orders',
+    'Planning',
+    'Approvals',
+    'Materials',
+    'Industrial engineering',
+    'Quality',
+    'Notes',
+    'Knowledge base',
+    'Administration',
+  ],
+  planner: [
+    'Overview',
+    'Orders',
+    'Planning',
+    'Approvals',
+    'Notes',
+    'Knowledge base',
+  ],
+  storekeeper: [
+    'Overview',
+    'Materials',
+    'Notes',
+    'Knowledge base',
+  ],
+  ie_engineer: [
+    'Overview',
+    'Industrial engineering',
+    'Notes',
+    'Knowledge base',
+  ],
+  quality_manager: [
+    'Overview',
+    'Quality',
+    'Notes',
+    'Knowledge base',
+  ],
+  viewer: [
+    'Overview',
+    'Orders',
+    'Planning',
+    'Approvals',
+    'Materials',
+    'Industrial engineering',
+    'Quality',
+    'Knowledge base',
+  ],
+}
+
+function isSectionAllowedForRoles(sectionLabel: string, roles: string[]): boolean {
+  if (roles.length === 0) return true
+  // Supervisors and Org Admins monitor all sections
+  if (roles.includes('supervisor') || roles.includes('org_admin')) {
+    return true
+  }
+
+  let hasKnownRole = false
+  for (const role of roles) {
+    const allowed = ROLE_ALLOWED_SECTIONS[role]
+    if (allowed) {
+      hasKnownRole = true
+      if (allowed.includes(sectionLabel)) return true
+    }
+  }
+
+  return !hasKnownRole
+}
+
 function Sidebar({ id, open }: { id: string; open: boolean }) {
   const factory = useFactory()
   const can = useCan()
-  const sections = NAV_SECTIONS.filter((section) => can(section.permission))
+  const sections = NAV_SECTIONS
+    .filter((section) => can(section.permission))
+    .filter((section) => isSectionAllowedForRoles(section.label, factory.roles))
 
   return (
     <nav

@@ -94,7 +94,10 @@ async def test_accessible_and_visible_factories(
     planner = await _principal(db_session, identity, "planner@demo.test")
     admin = await _principal(db_session, identity, "admin@demo.test")
 
-    assert await accessible_factory_ids(db_session, planner, "order:create") == [ktn.id]
+    supervisor = await _principal(db_session, identity, "supervisor@demo.test")
+    assert await accessible_factory_ids(db_session, supervisor, "order:create") == [ktn.id]
+    assert await accessible_factory_ids(db_session, planner, "order:create") == []
+    assert await accessible_factory_ids(db_session, planner, "analysis:run") == [ktn.id]
     assert await accessible_factory_ids(db_session, planner, "order:dispatch") == []
     assert await accessible_factory_ids(db_session, admin, "admin:manage") == [byg.id, ktn.id]
     assert await accessible_factory_ids(db_session, admin, "order:create") == []

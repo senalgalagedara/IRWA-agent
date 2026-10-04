@@ -260,20 +260,6 @@ def render_markdown(report: dict[str, Any]) -> str:
     lines.append("")
     injection = security["prompt_injection"]
     lines.append(f"Prompt-injection suite: {injection['blocked']}/{injection['total']} blocked")
-    attack_analysis = security["prompt_attack_analysis"]
-    lines.append("")
-    lines.append("### Prompt injection and jailbreak analysis")
-    lines.append("")
-    lines.append("| Attack area | Status | Implemented control | Coverage |")
-    lines.append("|---|---|---|---|")
-    for check in attack_analysis["checks"]:
-        lines.append(
-            f"| {check['category']} | {check['status']} | {check['control']} | {check['coverage']} |"
-        )
-    lines.append("")
-    lines.append("Limitations:")
-    for limitation in attack_analysis["limitations"]:
-        lines.append(f"- {limitation}")
     abstention = security["abstention"]
     lines.append(f"Abstention checks: {abstention['passed']}/{abstention['total']} passed")
     lines.append("")

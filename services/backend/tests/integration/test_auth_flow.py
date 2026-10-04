@@ -229,7 +229,8 @@ async def test_full_login_flow(
     assert [f["code"] for f in body["factories"]] == ["KTN"]
     ktn = body["factories"][0]
     assert ktn["roles"] == ["planner"]
-    assert "order:create" in ktn["permissions"]
+    assert "analysis:run" in ktn["permissions"]
+    assert "order:create" not in ktn["permissions"]
     assert "order:dispatch" not in ktn["permissions"]
     assert ktn["timezone"] == "Asia/Colombo"
     assert isinstance(body["csrf_token"], str) and len(body["csrf_token"]) >= 32
