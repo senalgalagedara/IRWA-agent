@@ -72,9 +72,39 @@ export function OrderPlanTab({ order }: { order: Schemas['OrderDetail'] }) {
   const proposalSlots = recQuery.data?.diff?.slots ?? []
   const hasProposal = Boolean(recommendationId || planningSummary)
   const isCommitted = (order.allocations?.length ?? 0) > 0
+  const promptSafety = report?.promptSafety
 
   return (
     <div className="flex flex-col gap-6">
+      {promptSafety && (
+        <section className="flex flex-col gap-3 rounded-xl border border-info-line bg-info-bg/20 p-5">
+          <div className="flex flex-wrap items-start justify-between gap-3 border-b border-info-line pb-3">
+            <div>
+              <h3 className="text-base font-bold text-fg">Prompt injection and jailbreak assessment</h3>
+              <p className="mt-1 text-xs text-fg-muted">{promptSafety.scope}</p>
+            </div>
+            <span className="rounded-md border border-success-line bg-success-bg px-2 py-1 text-xs font-bold text-success-fg">
+              {promptSafety.status}
+            </span>
+          </div>
+          <div className="grid gap-2 md:grid-cols-2">
+            {promptSafety.checks.map((check) => (
+              <div key={check.category} className="rounded-md border border-line bg-surface p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-semibold text-fg">{check.category}</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-success-fg">{check.status}</span>
+                </div>
+                <p className="mt-1 text-xs text-fg-muted">{check.control}</p>
+                <p className="mt-2 text-[11px] text-fg-muted">Verified by: {check.verification}</p>
+              </div>
+            ))}
+          </div>
+          <p className="text-[11px] text-fg-muted">
+            This is a control assessment for the recommendation workflow. The adversarial scenarios are exercised by the security test suite.
+          </p>
+        </section>
+      )}
+
       {/* 1. Proposed AI Production Plan */}
       {hasProposal && (
         <section className="flex flex-col gap-4 rounded-xl border border-line bg-surface p-5 shadow-xs">

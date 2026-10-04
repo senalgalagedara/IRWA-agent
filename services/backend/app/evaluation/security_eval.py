@@ -136,8 +136,64 @@ def _abstention_checks() -> dict[str, Any]:
     }
 
 
-def run_security_eval(env: dict[str, str]) -> dict[str, Any]:
+def _prompt_attack_analysis(injection: dict[str, Any]) -> dict[str, Any]:
+    """Map the executable controls to the requested attack categories.
+
+    The harness uses deterministic fixture attacks, so the report must state
+    the coverage boundary instead of presenting fixture results as live-model
+    robustness evidence.
+    """
+    checks = [
+        {
+            "category": "Prompt Injection",
+            "status": "PASS" if injection["all_blocked"] else "FAIL",
+            "control": "Untrusted document/tool text is data, not instructions.",
+            "coverage": "Adversarial document and tool-output fixtures",
+        },
+        {
+            "category": "Jailbreak Attempts",
+            "status": "PASS" if injection["all_blocked"] else "FAIL",
+            "control": "Closed read/compute-only tool set, bounded calls, and degraded fallback.",
+            "coverage": "Unknown-tool, tool-limit, refusal, and invalid-output scenarios",
+        },
+        {
+            "category": "Prompt Leakage",
+            "status": "PASS" if injection["all_blocked"] else "FAIL",
+            "control": "Secret and PII redaction is applied before provider/tool-result transmission.",
+            "coverage": "Reveal-key and redaction regression tests",
+        },
+        {
+            "category": "Instruction Override",
+            "status": "PASS" if injection["all_blocked"] else "FAIL",
+            "control": "Only deterministic candidate actions and retrieved evidence ids are accepted.",
+            "coverage": "Forged-action and fabricated-citation scenarios",
+        },
+        {
+            "category": "Prompt Manipulation",
+            "status": "PASS" if injection["all_blocked"] else "FAIL",
+            "control": "Tool arguments are schema-validated and database writes remain outside agents.",
+            "coverage": "SQL-shaped input and no-write regression scenarios",
+        },
+        {
+            "category": "Prompt Robustness",
+            "status": "LIMITED",
+            "control": "Invalid model output degrades safely without changing plan/allocation state.",
+            "coverage": "Fixture-only; live-provider semantic robustness is not measured",
+        },
+    ]
     return {
-        "prompt_injection": _run_prompt_injection_suite(env),
+        "checks": checks,
+        "limitations": [
+            "The harness does not claim live-provider jailbreak resistance without a configured production model.",
+            "Semantic prompt leakage tests should be expanded when additional provider adapters are enabled.",
+        ],
+    }
+
+
+def run_security_eval(env: dict[str, str]) -> dict[str, Any]:
+    injection = _run_prompt_injection_suite(env)
+    return {
+        "prompt_injection": injection,
+        "prompt_attack_analysis": _prompt_attack_analysis(injection),
         "abstention": _abstention_checks(),
     }
