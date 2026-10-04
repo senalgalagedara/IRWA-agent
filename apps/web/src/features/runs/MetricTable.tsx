@@ -68,11 +68,13 @@ const COLUMNS: Column<Metric>[] = [
     key: 'name',
     header: 'Metric',
     render: (row) => {
-      const meta = METRIC_DESCRIPTIONS[row.name]
+      const [baseKey, materialCode] = row.name.split(':')
+      const meta = METRIC_DESCRIPTIONS[baseKey ?? ''] ?? METRIC_DESCRIPTIONS[row.name]
+      const label = meta ? (materialCode ? `${meta.label} (${materialCode})` : meta.label) : row.name
       return (
         <div className="flex flex-col">
-          <span className="font-medium text-fg">{meta?.label ?? row.name}</span>
-          {meta && <span className="font-mono text-xs text-fg-muted">{row.name}</span>}
+          <span className="font-medium text-fg">{label}</span>
+          <span className="font-mono text-xs text-fg-muted">{row.name}</span>
         </div>
       )
     },
@@ -91,10 +93,17 @@ const COLUMNS: Column<Metric>[] = [
     key: 'meaning',
     header: 'What it means',
     render: (row) => {
-      const meta = METRIC_DESCRIPTIONS[row.name]
+      const [baseKey, materialCode] = row.name.split(':')
+      const meta = METRIC_DESCRIPTIONS[baseKey ?? ''] ?? METRIC_DESCRIPTIONS[row.name]
       return (
         <div className="flex flex-col gap-0.5 text-xs text-fg-muted">
-          <span>{meta?.meaning ?? 'Metric recorded for this assessment.'}</span>
+          <span>
+            {meta
+              ? materialCode
+                ? `${meta.meaning} (for item ${materialCode})`
+                : meta.meaning
+              : 'Metric recorded for this assessment.'}
+          </span>
           {row.note && <span className="italic text-fg-muted/80">{row.note}</span>}
         </div>
       )

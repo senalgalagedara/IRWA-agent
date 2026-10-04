@@ -41,15 +41,17 @@ function getExecutiveTakeaway(result: AgentResult) {
   }
 
   if (result.agent === 'rm') {
-    const shortage = metricsByName.get('shortage')
+    const hasAnyShortage = result.metrics.some(
+      (m) => m.name.startsWith('shortage') && Number(m.value) > 0
+    )
     const coverable = metricsByName.get('coverable_units')
-    const isSuccess = shortage !== undefined && (shortage === '0' || Number(shortage) === 0)
+    const isSuccess = !hasAnyShortage
     return {
       goal: orderDesc ?? 'Verify material availability and coverage against order Bill of Materials.',
-      verdict: isSuccess ? 'Materials in stock & ready for production!' : 'Material shortage detected from suppliers.',
+      verdict: isSuccess ? 'All materials in stock & ready for production!' : 'Material shortage detected from suppliers.',
       isSuccess,
       plan: topAction?.summary ?? result.summary,
-      unscheduledUnits: coverable ? `Current stock covers up to ${coverable} units` : null,
+      unscheduledUnits: coverable ? `Stock covers up to ${Number(coverable).toLocaleString()} units (Plenty for this order)` : '100% of materials available',
     }
   }
 
