@@ -59,12 +59,20 @@ function ShipmentCell({ shipment }: { shipment: OrderSummary['shipment'] }) {
   )
 }
 
-const COLUMNS: Column<OrderSummary>[] = [
-  {
-    key: 'external_ref',
-    header: 'Order',
-    render: (order) => <span className="font-mono text-xs font-medium">{order.external_ref}</span>,
-  },
+function getColumns(factoryCode: string): Column<OrderSummary>[] {
+  return [
+    {
+      key: 'external_ref',
+      header: 'Order',
+      render: (order) => (
+        <Link
+          className="font-mono text-xs font-medium link"
+          to={`/f/${encodeURIComponent(factoryCode)}/orders/${order.id}`}
+        >
+          {order.external_ref}
+        </Link>
+      ),
+    },
   {
     key: 'customer',
     header: 'Customer',
@@ -110,7 +118,20 @@ const COLUMNS: Column<OrderSummary>[] = [
     render: (order) => <StateBadge vocabulary="quality" state={order.quality_state} />,
   },
   { key: 'shipment', header: 'Shipment', render: (order) => <ShipmentCell shipment={order.shipment} /> },
+  {
+    key: 'actions',
+    header: '',
+    render: (order) => (
+      <Link
+        className="btn-secondary h-7 px-2 text-xs inline-flex items-center"
+        to={`/f/${encodeURIComponent(factoryCode)}/orders/${order.id}`}
+      >
+        View
+      </Link>
+    ),
+  },
 ]
+}
 
 export function OrdersPage() {
   const factory = useFactory()
@@ -244,7 +265,7 @@ export function OrdersPage() {
       <>
         <DataTable
           caption="Orders"
-          columns={COLUMNS}
+          columns={getColumns(factory.code)}
           rows={query.data.items}
           rowKey={(order) => order.id}
           sort={{ key: 'due_date', direction: 'ascending' }}

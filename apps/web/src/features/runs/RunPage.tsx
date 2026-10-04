@@ -16,8 +16,15 @@ import { useCan, useFactory } from '../../lib/factory'
 import { formatDateTime, formatInteger } from '../../lib/format'
 import { useIdempotencyKey } from '../../lib/idempotency'
 import { useToast } from '../../lib/toast'
+import { Tabs, type TabItem } from '../../components/Tabs'
 import { AgentResultCard } from './AgentResultCard'
-import { RunTimeline } from './RunTimeline'
+
+const AGENTS: { key: Schemas['AgentResult']['agent']; label: string }[] = [
+  { key: 'planning', label: 'Planning' },
+  { key: 'rm', label: 'Raw materials' },
+  { key: 'ie', label: 'Industrial engineering' },
+  { key: 'quality', label: 'Quality' },
+]
 
 const ACTIVE_STATUSES = new Set(['QUEUED', 'RUNNING'])
 const CANCELLABLE_STATUSES = new Set(['QUEUED', 'RUNNING', 'AWAITING_REVIEW'])
@@ -49,12 +56,6 @@ function RunView({ runId }: { runId: string }) {
     refetchInterval: (query) => (ACTIVE_STATUSES.has(query.state.data?.status ?? '') ? POLL_INTERVAL_MS : false),
   })
 
-  const eventsQuery = useQuery({
-    queryKey: ['run-events', runId],
-    queryFn: () =>
-      unwrap(api.GET('/api/v1/runs/{run_id}/events', { params: { path: { run_id: runId } } })),
-    refetchInterval: () => (ACTIVE_STATUSES.has(runQuery.data?.status ?? '') ? POLL_INTERVAL_MS : false),
-  })
 
   const cancelMutation = useMutation({
     mutationFn: (key: string) =>
@@ -95,6 +96,35 @@ function RunView({ runId }: { runId: string }) {
   }
   const run = runQuery.data
   const canManage = can('analysis:run')
+
+  const agentTabs: TabItem[] = AGENTS.map((agent) => {
+      const agentResults = run.results.filter((r) => r.agent === agent.key)
+      return {
+        id: agent.key,
+        label: `${agent.label}${agentResults.length > 0 ? ` (${agentResults.length})` : ''}`,
+        content:
+          agentResults.length === 0 ? (
+            <div className="pt-3">
+              <EmptyState
+                icon="info"
+                title={`No ${agent.label} results yet`}
+                description={`Results will appear as the ${agent.label} agent completes.`}
+              />
+            </div>
+          ) : (
+            <div className="flex flex-col gap-4 pt-3">
+              {agentResults.map((result) => (
+                <AgentResultCard
+                  key={result.task_id}
+                  result={result}
+                  factoryId={factory.id}
+                  timeZone={factory.timezone}
+                />
+              ))}
+            </div>
+          ),
+      }
+    })
 
   return (
     <>
@@ -164,35 +194,10 @@ function RunView({ runId }: { runId: string }) {
         </div>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <section>
-          <h2 className="mb-3 text-base font-semibold">Timeline</h2>
-          {eventsQuery.isPending ? (
-            <LoadingState label="Loading events…" />
-          ) : eventsQuery.isError ? (
-            <ErrorState error={eventsQuery.error} onRetry={() => void eventsQuery.refetch()} />
-          ) : (
-            <RunTimeline events={eventsQuery.data} timeZone={factory.timezone} />
-          )}
-        </section>
-        <section>
-          <h2 className="mb-3 text-base font-semibold">Agent results</h2>
-          {run.results.length === 0 ? (
-            <EmptyState icon="info" title="No agent results yet" description="Results appear as agents reply." />
-          ) : (
-            <div className="flex flex-col gap-4">
-              {run.results.map((result) => (
-                <AgentResultCard
-                  key={result.task_id}
-                  result={result}
-                  factoryId={factory.id}
-                  timeZone={factory.timezone}
-                />
-              ))}
-            </div>
-          )}
-        </section>
-      </div>
+      <section className="flex flex-col gap-4">
+        <h2 className="text-base font-semibold">Agent results</h2>
+        <Tabs label="Agent results by domain" tabs={agentTabs} />
+      </section>
 
       <ConfirmDialog
         open={confirmCancel}
