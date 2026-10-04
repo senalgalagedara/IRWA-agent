@@ -64,6 +64,7 @@ export function RecommendationCompareSection() {
         projectedFinishDate,
         linesUsed,
         isStale: data.stale,
+        rationale: data.rationale,
         reviewPath: `/f/${encodeURIComponent(factory.code)}/approvals/${data.id}`,
       }
     })

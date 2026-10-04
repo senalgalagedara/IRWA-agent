@@ -128,6 +128,38 @@ function RecommendationView({ recId }: { recId: string }) {
         </div>
       )}
 
+      {/* Executive Takeaway */}
+      {(() => {
+        const proposal = (rec.proposal ?? {}) as Record<string, unknown>
+        const unscheduled = typeof proposal?.unscheduled_units === 'number' ? proposal.unscheduled_units : 0
+        const isSuccess = unscheduled === 0
+        return (
+          <div
+            className={`mb-6 flex flex-col gap-3 rounded-xl border p-4 shadow-xs ${
+              isSuccess ? 'border-success-line bg-success-bg/25' : 'border-warn-line bg-warn-bg/25'
+            }`}
+          >
+            <div className="flex items-center gap-2.5">
+              <span className="text-2xl" role="img" aria-label={isSuccess ? 'Success' : 'Warning'}>
+                {isSuccess ? '✅' : '⚠️'}
+              </span>
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-fg-muted block">The Verdict</span>
+                <h3 className="text-base font-bold text-fg">
+                  {isSuccess ? 'It can be done on time!' : 'Schedule attention required: units remain unscheduled.'}
+                </h3>
+              </div>
+            </div>
+            <div className="rounded-lg bg-surface/90 border border-line p-3 shadow-xs">
+              <span className="text-xs font-bold uppercase tracking-wider text-accent block mb-1">
+                🚀 Recommended Action
+              </span>
+              <p className="text-sm font-semibold text-fg">{rec.rationale}</p>
+            </div>
+          </div>
+        )
+      })()}
+
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="flex flex-col gap-6">
           <div>

@@ -117,8 +117,12 @@ function RunView({ runId }: { runId: string }) {
                 <AgentResultCard
                   key={result.task_id}
                   result={result}
+                  factoryCode={factory.code}
                   factoryId={factory.id}
                   timeZone={factory.timezone}
+                  recommendationId={
+                    (run.report as { recommendation?: { id?: string } } | null)?.recommendation?.id ?? null
+                  }
                 />
               ))}
             </div>

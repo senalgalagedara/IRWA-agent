@@ -49,9 +49,25 @@ export const METRIC_DESCRIPTIONS: Record<string, { label: string; meaning: strin
     label: 'Line Balancing Index',
     meaning: 'Work distribution efficiency across all sewing workstations.',
   },
+  balance_index: {
+    label: 'Line Balancing Index',
+    meaning: 'Work distribution efficiency across all sewing workstations.',
+  },
   bottleneck_cycle_seconds: {
     label: 'Bottleneck Cycle Time',
     meaning: 'Slowest operation speed gating the entire sewing line throughput.',
+  },
+  bottleneck_seconds: {
+    label: 'Bottleneck Operation Time',
+    meaning: 'Cycle time of the single slowest workstation gating line output.',
+  },
+  units_per_hour: {
+    label: 'Line Output Speed',
+    meaning: 'Actual garments this sewing line can produce per hour based on current bottlenecks.',
+  },
+  sam_units_per_hour: {
+    label: 'Theoretical Output Speed',
+    meaning: 'Maximum theoretical hourly garments if every workstation achieved 100% SAM efficiency.',
   },
   defects_per_hundred_units: {
     label: 'DHU (Defects / 100 Units)',

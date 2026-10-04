@@ -82,15 +82,24 @@ function getExecutiveTakeaway(result: AgentResult) {
  * actions, data quality and execution metadata. */
 export function AgentResultCard({
   result,
+  factoryCode,
   factoryId,
   timeZone,
+  recommendationId,
 }: {
   result: AgentResult
-  factoryId: string
+  factoryCode: string
+  factoryId?: string
   timeZone: string
+  recommendationId?: string | null
 }) {
   const metadata = result.execution_metadata
   const takeaway = getExecutiveTakeaway(result)
+
+  const code = factoryCode || factoryId || ''
+  const approvalUrl = recommendationId
+    ? `/f/${encodeURIComponent(code)}/approvals/${encodeURIComponent(recommendationId)}`
+    : `/f/${encodeURIComponent(code)}/approvals`
 
   return (
     <section className="panel flex flex-col gap-5 p-5">
@@ -120,7 +129,7 @@ export function AgentResultCard({
             </div>
           </div>
           <Link
-            to={`/f/${encodeURIComponent(factoryId)}/approvals`}
+            to={approvalUrl}
             className="btn-primary text-xs h-8 px-3 inline-flex items-center gap-1.5 shadow-xs"
           >
             <span>Review in Approvals</span>
