@@ -53,8 +53,12 @@ export function RecommendationCompareSection() {
       const linesUsed = [...new Set(data.diff.slots.map((slot) => slot.line_code))]
       const unscheduledUnits =
         typeof proposal.unscheduled_units === 'number' ? proposal.unscheduled_units : 0
+      const slotDates = data.diff.slots.map((s) => s.slot_date).filter(Boolean).sort()
+      const maxSlotDate = slotDates.length > 0 ? slotDates[slotDates.length - 1] : null
       const projectedFinishDate =
-        typeof proposal.projected_finish_date === 'string' ? proposal.projected_finish_date : null
+        typeof proposal.projected_finish_date === 'string'
+          ? proposal.projected_finish_date
+          : maxSlotDate
       return {
         id: data.id,
         orderId: data.order.id,

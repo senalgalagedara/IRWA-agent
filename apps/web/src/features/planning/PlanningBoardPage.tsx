@@ -10,8 +10,10 @@ import { PermissionDenied } from '../../components/PermissionDenied'
 import { fieldAria } from '../../components/fieldAria'
 import { ApiError, api, unwrap } from '../../lib/api'
 import { useCan, useFactory } from '../../lib/factory'
+import { Tabs, type TabItem } from '../../components/Tabs'
 import { CapacityGrid } from './CapacityGrid'
 import { addDaysIso, isoDateInTimeZone, rangeError } from './dateRange'
+import { LinesGuideTab } from './LinesGuideTab'
 import { RecommendationCompareSection } from './RecommendationCompareSection'
 
 function PlanningBoard() {
@@ -58,46 +60,74 @@ function PlanningBoard() {
     body = <CapacityGrid board={query.data} factoryCode={factory.code} />
   }
 
-  return (
-    <div className="flex flex-col gap-6">
-      <form
-        role="search"
-        aria-label="Date range"
-        className="grid max-w-md grid-cols-2 gap-3"
-        onSubmit={(event) => {
-          event.preventDefault()
-        }}
-      >
-        <FormField id="planning-start" label="Start date" required error={startError}>
-          <input
-            type="date"
-            className="input"
-            value={start}
-            {...fieldAria('planning-start', startError, undefined, true)}
-            onChange={(event) => {
-              setStart(event.target.value)
+  const planningTabs: TabItem[] = [
+    {
+      id: 'board',
+      label: 'Capacity Board',
+      content: (
+        <div className="flex flex-col gap-6 pt-3">
+          <form
+            role="search"
+            aria-label="Date range"
+            className="grid max-w-md grid-cols-2 gap-3"
+            onSubmit={(event) => {
+              event.preventDefault()
             }}
-          />
-        </FormField>
-        <FormField id="planning-end" label="End date" required error={error}>
-          <input
-            type="date"
-            className="input"
-            value={end}
-            {...fieldAria('planning-end', error, undefined, true)}
-            onChange={(event) => {
-              setEnd(event.target.value)
-            }}
-          />
-        </FormField>
-      </form>
-      <div aria-busy={query.isFetching}>{body}</div>
+          >
+            <FormField id="planning-start" label="Start date" required error={startError}>
+              <input
+                type="date"
+                className="input"
+                value={start}
+                {...fieldAria('planning-start', startError, undefined, true)}
+                onChange={(event) => {
+                  setStart(event.target.value)
+                }}
+              />
+            </FormField>
+            <FormField id="planning-end" label="End date" required error={error}>
+              <input
+                type="date"
+                className="input"
+                value={end}
+                {...fieldAria('planning-end', error, undefined, true)}
+                onChange={(event) => {
+                  setEnd(event.target.value)
+                }}
+              />
+            </FormField>
+          </form>
+          <div aria-busy={query.isFetching}>{body}</div>
+        </div>
+      ),
+    },
+    {
+      id: 'lines-guide',
+      label: 'What the Lines Mean',
+      content: <LinesGuideTab lines={query.data?.lines} />,
+    },
+  ]
 
+  return (
+    <div className="flex flex-col gap-8">
+      {/* 1. Proposed recommendations at the TOP */}
       <section aria-labelledby="planning-compare">
-        <h2 id="planning-compare" className="mb-3 text-base font-semibold">
-          Proposed recommendations
-        </h2>
+        <div className="flex items-center justify-between mb-3 border-b border-line pb-2">
+          <div>
+            <h2 id="planning-compare" className="text-base font-semibold">
+              Proposed recommendations
+            </h2>
+            <p className="text-xs text-fg-muted">
+              AI-generated line allocations awaiting decision
+            </p>
+          </div>
+        </div>
         <RecommendationCompareSection />
+      </section>
+
+      {/* 2. Planning Tabs: Capacity Board + What the Lines Mean */}
+      <section className="flex flex-col gap-4">
+        <Tabs label="Planning board views" tabs={planningTabs} />
       </section>
     </div>
   )
