@@ -216,8 +216,24 @@ function RecommendationView({ recId }: { recId: string }) {
               </p>
             )}
             {applyMutation.isError && !staleFieldErrors && (
-              <div className="mt-2">
+              <div className="mt-2 flex flex-col gap-2">
                 <ErrorState title="The recommendation was not applied" error={applyMutation.error} />
+                {applyMutation.error instanceof ApiError &&
+                  applyMutation.error.message?.includes('DRAFT') && (
+                    <div className="rounded-lg border border-warn-line bg-warn-bg/25 p-3 text-xs flex flex-col gap-1.5">
+                      <span className="font-semibold text-fg">Order is currently in DRAFT status</span>
+                      <p className="text-fg-muted">
+                        Under garment factory governance, an order must be <strong>VALIDATED</strong> before capacity allocations and warehouse materials can be committed.
+                      </p>
+                      <Link
+                        className="btn-secondary w-fit text-xs h-8 px-3 inline-flex items-center gap-1.5 mt-1 shadow-xs"
+                        to={orderPath}
+                      >
+                        <span>Open Order {rec.order.external_ref} to Validate</span>
+                        <span aria-hidden="true">&rarr;</span>
+                      </Link>
+                    </div>
+                  )}
               </div>
             )}
             {staleFieldErrors && staleFieldErrors.length > 0 && (
