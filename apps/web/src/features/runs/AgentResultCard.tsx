@@ -1,3 +1,4 @@
+import { Link } from 'react-router'
 import { StateBadge } from '../../components/StateBadge'
 import { SourceLabel } from '../../components/SourceLabel'
 import { Icon } from '../../components/Icon'
@@ -91,138 +92,154 @@ export function AgentResultCard({
 
   return (
     <section className="panel flex flex-col gap-5 p-5">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-lg font-semibold">{AGENT_LABEL[result.agent]}</h3>
+      {/* 1. Header */}
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line pb-3">
+        <div className="flex items-center gap-3">
+          <h3 className="text-xl font-bold text-fg">{AGENT_LABEL[result.agent]}</h3>
+          <span className="text-xs text-fg-muted">Domain Assessment</span>
+        </div>
         <StateBadge vocabulary="agent_result" state={result.status} />
       </div>
 
-      {/* Highlighted Executive Takeaway Box */}
+      {/* 2. RECOMMENDED ACTION FIRST (Clear, prominent, actionable) */}
       <div
-        className={`flex flex-col gap-3 rounded-xl border p-4 shadow-xs ${
+        className={`flex flex-col gap-4 rounded-xl border p-5 shadow-xs transition-all ${
           takeaway.isSuccess ? 'border-success-line bg-success-bg/25' : 'border-warn-line bg-warn-bg/25'
         }`}
       >
-        <div className="flex items-center justify-between gap-2 border-b border-line/50 pb-2">
-          <div className="flex items-center gap-2">
-            <span className="text-xl" role="img" aria-label={takeaway.isSuccess ? 'Success' : 'Warning'}>
+        <div className="flex items-center justify-between gap-2 border-b border-line/40 pb-3">
+          <div className="flex items-center gap-2.5">
+            <span className="text-2xl" role="img" aria-label={takeaway.isSuccess ? 'Success' : 'Warning'}>
               {takeaway.isSuccess ? '✅' : '⚠️'}
             </span>
-            <span className="text-base font-semibold text-fg">{takeaway.verdict}</span>
+            <div>
+              <span className="text-xs font-bold uppercase tracking-wider text-fg-muted block">The Verdict</span>
+              <h4 className="text-base font-bold text-fg">{takeaway.verdict}</h4>
+            </div>
           </div>
-          <span
-            className={`rounded-full px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider ${
-              takeaway.isSuccess
-                ? 'border border-success-line bg-success-bg text-success-fg'
-                : 'border border-warn-line bg-warn-bg text-warn-fg'
-            }`}
+          <Link
+            to={`/f/${encodeURIComponent(factoryId)}/approvals`}
+            className="btn-primary text-xs h-8 px-3 inline-flex items-center gap-1.5 shadow-xs"
           >
-            The Verdict
-          </span>
+            <span>Review in Approvals</span>
+            <span aria-hidden="true">&rarr;</span>
+          </Link>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 text-sm md:grid-cols-2">
-          <div>
-            <span className="mb-0.5 block text-xs font-bold uppercase tracking-wider text-fg-muted">
-              🎯 The Goal
-            </span>
+        {/* The Concrete Plan / Recommendation */}
+        <div className="rounded-lg bg-surface/90 border border-line p-3.5 shadow-xs">
+          <span className="text-xs font-bold uppercase tracking-wider text-accent block mb-1">
+            🚀 Recommended Action to Take
+          </span>
+          <p className="text-base font-semibold text-fg">
+            {takeaway.plan}
+          </p>
+        </div>
+
+        {/* Quick Goal & Unscheduled breakdown */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+          <div className="rounded-lg bg-surface-sunken/60 p-2.5">
+            <span className="text-xs font-bold uppercase tracking-wider text-fg-muted block mb-0.5">🎯 The Goal</span>
             <p className="font-medium text-fg">{takeaway.goal}</p>
           </div>
-          <div>
-            <span className="mb-0.5 block text-xs font-bold uppercase tracking-wider text-fg-muted">
-              📋 The Plan
-            </span>
-            <p className="font-medium text-fg">{takeaway.plan}</p>
+          <div className="rounded-lg bg-surface-sunken/60 p-2.5">
+            <span className="text-xs font-bold uppercase tracking-wider text-fg-muted block mb-0.5">📦 Unscheduled Units</span>
+            <p className={`font-semibold ${takeaway.isSuccess ? 'text-success-fg' : 'text-warn-fg'}`}>
+              {takeaway.unscheduledUnits ?? '0 units (Fully scheduled)'}
+            </p>
           </div>
         </div>
-
-        {takeaway.unscheduledUnits && (
-          <div className="flex items-center justify-between rounded-lg bg-surface-sunken/60 px-3 py-2 text-xs">
-            <span className="font-medium text-fg-muted">Unscheduled Units:</span>
-            <span className={`font-semibold ${takeaway.isSuccess ? 'text-success-fg' : 'text-warn-fg'}`}>
-              {takeaway.unscheduledUnits}
-            </span>
-          </div>
-        )}
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <p className="text-sm text-fg-muted">{result.summary}</p>
-        <SourceLabel
-          source={result.summary_source === 'model' ? { kind: 'ai_recommendation' } : { kind: 'calculated' }}
-        />
-      </div>
-
-      {result.warnings.length > 0 && (
-        <ul className="flex flex-col gap-1 rounded-md border border-warn-line bg-warn-bg p-2.5 text-warn-fg">
-          {result.warnings.map((warning) => (
-            <li key={warning} className="flex items-start gap-1.5 text-sm">
-              <Icon name="alert" className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              {warning}
-            </li>
-          ))}
-        </ul>
-      )}
-
+      {/* 3. KEY METRICS EXPLAINED (Numbers made simple) */}
       <div>
-        <h4 className="mb-2 text-sm font-semibold">Findings & Bottlenecks</h4>
-        <FindingList findings={result.findings} />
-      </div>
-
-      <div>
-        <h4 className="mb-2 text-sm font-semibold">Metrics Explained</h4>
+        <div className="mb-2 flex items-center justify-between">
+          <h4 className="text-sm font-bold text-fg">📊 Key Numbers Explained</h4>
+          <span className="text-xs text-fg-muted">Calculated from factory records</span>
+        </div>
         <MetricTable metrics={result.metrics} />
       </div>
 
-      {result.recommended_actions.length > 0 && (
+      {/* 4. Alternative Options (if multiple options were evaluated) */}
+      {result.recommended_actions.length > 1 && (
         <div>
-          <h4 className="mb-2 text-sm font-semibold">Recommended actions</h4>
+          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-fg-muted">
+            Alternative Options Evaluated ({result.recommended_actions.length - 1})
+          </h4>
           <ul className="flex flex-col gap-2">
             {result.recommended_actions
               .slice()
               .sort((a, b) => a.rank - b.rank)
+              .slice(1)
               .map((action) => (
-                <li key={action.action_id} className="panel flex flex-col gap-1.5 p-3">
+                <li key={action.action_id} className="panel flex flex-col gap-1 p-2.5 text-xs text-fg-muted">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-medium text-fg-muted">
-                      #{action.rank} · {humanizeCode(action.kind)}
-                    </span>
-                    <SourceLabel
-                      source={action.source === 'model' ? { kind: 'ai_recommendation' } : { kind: 'calculated' }}
-                    />
+                    <span className="font-medium">#{action.rank} · {humanizeCode(action.kind)}</span>
+                    <SourceLabel source={action.source === 'model' ? { kind: 'ai_recommendation' } : { kind: 'calculated' }} />
                   </div>
-                  <p className="text-sm font-medium">{action.summary}</p>
+                  <p>{action.summary}</p>
                 </li>
               ))}
           </ul>
         </div>
       )}
 
-      {/* Advanced Details & Evidence (Collapsible) */}
+      {/* 5. HIDDEN BY DEFAULT: BOTTLENECKS, FINDINGS, INFO & EVIDENCE IN ACCORDION */}
       <details className="group overflow-hidden rounded-xl border border-line bg-surface-sunken/40">
         <summary className="flex cursor-pointer select-none items-center justify-between p-3.5 text-sm font-medium text-fg-muted transition-colors hover:text-fg">
           <div className="flex items-center gap-2">
             <Icon name="search" className="h-4 w-4" />
-            <span>Advanced: Technical Evidence & Citations ({result.evidence_refs.length})</span>
+            <span>
+              View Technical Details, Bottlenecks & Citations ({result.findings.length} findings, {result.evidence_refs.length} records)
+            </span>
           </div>
           <span className="rounded border border-line bg-surface px-2 py-0.5 text-xs text-fg-muted transition-transform group-open:rotate-180">
             ▼
           </span>
         </summary>
         <div className="flex flex-col gap-5 border-t border-line bg-surface/50 p-4">
+          {/* Bottlenecks & Findings */}
+          {result.findings.length > 0 && (
+            <div>
+              <h5 className="mb-2 text-xs font-semibold uppercase tracking-wider text-fg-muted">
+                Findings & Bottleneck Observations
+              </h5>
+              <FindingList findings={result.findings} />
+            </div>
+          )}
+
+          {/* Warnings */}
+          {result.warnings.length > 0 && (
+            <ul className="flex flex-col gap-1 rounded-md border border-warn-line bg-warn-bg p-2.5 text-warn-fg">
+              {result.warnings.map((warning) => (
+                <li key={warning} className="flex items-start gap-1.5 text-xs">
+                  <Icon name="alert" className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  {warning}
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {/* Model notes & raw commentary */}
+          <div className="rounded-md bg-surface-sunken/60 p-2.5 text-xs text-fg-muted">
+            <span className="font-semibold block mb-1">Model Commentary:</span>
+            <p>{result.summary}</p>
+          </div>
+
+          {/* Data quality */}
           {!result.data_quality.complete && (
             <div className="rounded-md border border-warn-line bg-warn-bg p-2.5 text-warn-fg">
-              <p className="text-sm font-semibold">Data quality</p>
+              <p className="text-xs font-semibold">Data quality</p>
               {result.data_quality.missing.length > 0 && (
-                <p className="text-sm">Missing: {result.data_quality.missing.join(', ')}</p>
+                <p className="text-xs">Missing: {result.data_quality.missing.join(', ')}</p>
               )}
               {result.data_quality.notes.map((note) => (
-                <p key={note} className="text-sm">
-                  {note}
-                </p>
+                <p key={note} className="text-xs">{note}</p>
               ))}
             </div>
           )}
 
+          {/* Cited Evidence */}
           <div>
             <h5 className="mb-2 text-xs font-semibold uppercase tracking-wider text-fg-muted">
               Database Citations & SOP Records
@@ -233,6 +250,7 @@ export function AgentResultCard({
             />
           </div>
 
+          {/* Execution metadata */}
           <div>
             <h5 className="mb-2 text-xs font-semibold uppercase tracking-wider text-fg-muted">
               Model & Execution Metadata
